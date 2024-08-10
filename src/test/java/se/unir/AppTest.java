@@ -62,22 +62,39 @@ public class AppTest {
                 doc.add(new TextField("title", "super fancy new title xyz", Field.Store.YES));
                 writer.updateDocument(term, doc);
             }
+        }
 
+        try (IndexReader reader = DirectoryReader.open(writer)) {
             assertEquals(2, reader.maxDoc());
 
-            indexSearcher = new IndexSearcher(reader);
-            term = new Term("title", "title1");
-            foundDocuments = indexSearcher.search(new TermQuery(term), 5);
+            IndexSearcher indexSearcher = new IndexSearcher(reader);
+
+            // let's search for old one (expect not found)
+            Term term = new Term("title", "title1");
+            TopDocs foundDocuments = indexSearcher.search(new TermQuery(term), 5);
 
             assertEquals(0, foundDocuments.scoreDocs.length);
 
-            indexSearcher = new IndexSearcher(reader);
+            for (int i = 0; i < reader.maxDoc(); i++) {
+                System.out.println(reader.storedFields().document(i));
+            }
+            /*
+            I have here from the above:
+
+                Document<stored,indexed,tokenized<title:title2> stored,indexed,tokenized<body:body2>>
+                Document<stored,indexed,tokenized<body:body1> stored,indexed,tokenized<title:super fancy new title xyz>>
+
+            but the search for the field doesn't seem to work?
+             */
+
+
+            // let's search for the new one
             term = new Term("title", "super fancy new title xyz");
-            foundDocuments = indexSearcher.search(new TermQuery(term), 5);
+            TopDocs foundDocuments2 = indexSearcher.search(new TermQuery(term), 5);
 
-            assertEquals(1, foundDocuments.scoreDocs.length);
+            assertEquals(1, foundDocuments2.scoreDocs.length);
 
-            for (ScoreDoc foundDocument : foundDocuments.scoreDocs) {
+            for (ScoreDoc foundDocument : foundDocuments2.scoreDocs) {
                 final Document doc = reader.storedFields().document(foundDocument.doc);
 
                 assertEquals("super fancy new title xyz", doc.get("title"));
