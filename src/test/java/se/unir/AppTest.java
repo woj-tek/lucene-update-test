@@ -46,6 +46,7 @@ public class AppTest {
         writer.addDocument(document);
 
 
+        final String newSuperFancyNewTitleXyz = "super fancy new title xyz";
         try (IndexReader reader = DirectoryReader.open(writer)) {
             assertEquals(2, reader.maxDoc());
 
@@ -59,7 +60,7 @@ public class AppTest {
                 assertEquals("title1", doc.get("title"));
 
                 doc.removeField("title");
-                doc.add(new TextField("title", "super fancy new title xyz", Field.Store.YES));
+                doc.add(new TextField("title", newSuperFancyNewTitleXyz, Field.Store.YES));
                 writer.updateDocument(term, doc);
             }
         }
@@ -89,7 +90,7 @@ public class AppTest {
 
 
             // let's search for the new one
-            term = new Term("title", "super fancy new title xyz");
+            term = new Term("title", newSuperFancyNewTitleXyz);
             TopDocs foundDocuments2 = indexSearcher.search(new TermQuery(term), 5);
 
             assertEquals(1, foundDocuments2.scoreDocs.length);
@@ -97,7 +98,7 @@ public class AppTest {
             for (ScoreDoc foundDocument : foundDocuments2.scoreDocs) {
                 final Document doc = reader.storedFields().document(foundDocument.doc);
 
-                assertEquals("super fancy new title xyz", doc.get("title"));
+                assertEquals(newSuperFancyNewTitleXyz, doc.get("title"));
             }
         }
     }
